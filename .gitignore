@@ -2,3 +2,5 @@ tags
 *.pyc
 pvstats.conf
 dist/
+.idea/*
+*egg-info*
