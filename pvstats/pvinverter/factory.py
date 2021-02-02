@@ -18,59 +18,62 @@
 
 from datetime import datetime
 from decimal import *
+from random import randint
 
-from pymodbus.constants import Defaults
-from pymodbus.client.sync import ModbusTcpClient
-from pymodbus.transaction import ModbusSocketFramer
-
+from pvstats.pvinverter.base import BasePVInverter
 from pvstats.pvinverter.fronius import PVInverter_Fronius
 from pvstats.pvinverter.solax import PVInverter_Solax
 from pvstats.pvinverter.sungrow_sg5ktl import PVInverter_SunGrow, PVInverter_SunGrowRTU
-from pvstats.pvinverter.sungrow_sh5k_20 import PVInverter_SunGrow_sh5k_20, PVInverter_SunGrow_sh5k_20RTU
-from pvstats.pvinverter.base import BasePVInverter
+from pvstats.pvinverter.sungrow_sh5k_20 import PVInverter_SunGrow_sh5k_20
+from pvstats.pvinverter.sungrow_sg5kd import PVInverter_SunGrow_SG5KD
 
-from random import randint
 
 class PVInverter_Test(BasePVInverter):
-  def __init__(self): pass
-  def connect(self): pass
-  def read(self):
-    self.registers = {'timestamp':datetime.now(),
-                      'daily_pv_power':Decimal('2300') + randint(0,1000),
-                      'total_pv_power':Decimal('2100') + randint(0,1000),
-                      'internal_temp': Decimal('41.2') + randint(0,10),
-                      'pv1_voltage':   Decimal('213')  + randint(0,30),
-                      'pv2_voltage':   Decimal('125')  + randint(0,20)}
+    def __init__(self): pass
 
-  def close(self): pass
+    def connect(self): pass
+
+    def read(self):
+        self.registers = {'timestamp': datetime.now(),
+                          'daily_pv_power': Decimal('2300') + randint(0, 1000),
+                          'total_pv_power': Decimal('2100') + randint(0, 1000),
+                          'internal_temp': Decimal('41.2') + randint(0, 10),
+                          'pv1_voltage': Decimal('213') + randint(0, 30),
+                          'pv2_voltage': Decimal('125') + randint(0, 20)}
+
+    def close(self): pass
+
 
 # Factory class for the PV Inverter
 def PVInverterFactory(model, cfg):
-  if (model == "test"):
-    return PVInverter_Test()
-  elif (model == "sungrow-sg5ktl" and cfg['mode'] == 'rtu'):
-    return PVInverter_SunGrowRTU(cfg)
-  elif (model == "sungrow-sg5ktl"):
-    # Assume TCP
-    return PVInverter_SunGrow(cfg)
-  elif (model == "sungrow-sh5k-20"):
-    # Assume TCP
-    return PVInverter_SunGrow_sh5k_20(cfg)
-  elif (model == "fronius"):
-    # Assume TCP
-    return PVInverter_Fronius(cfg)
-  elif (model == "solax"):
-    # Assume TCP
-    return PVInverter_Solax(cfg)
-  else:
-    raise ValueError("Unable to find PVInverter for {}".format(model))
+    if (model == "test"):
+        return PVInverter_Test()
+    elif (model == "sungrow-sg5ktl" and cfg['mode'] == 'rtu'):
+        return PVInverter_SunGrowRTU(cfg)
+    elif (model == "sungrow-sg5ktl"):
+        # Assume TCP
+        return PVInverter_SunGrow(cfg)
+    elif (model == "sungrow-sg5kd"):
+        # Assume TCP
+        return PVInverter_SunGrow_SG5KD(cfg)
+    elif (model == "sungrow-sh5k-20"):
+        # Assume TCP
+        return PVInverter_SunGrow_sh5k_20(cfg)
+    elif (model == "fronius"):
+        # Assume TCP
+        return PVInverter_Fronius(cfg)
+    elif (model == "solax"):
+        # Assume TCP
+        return PVInverter_Solax(cfg)
+    else:
+        raise ValueError("Unable to find PVInverter for {}".format(model))
 
 
-#-----------------
+# -----------------
 # Exported symbols
-#-----------------
+# -----------------
 __all__ = [
-  "PVInverterFactory"
+    "PVInverterFactory"
 ]
 
 # vim: set expandtab ts=2 sw=2:

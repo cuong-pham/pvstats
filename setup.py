@@ -22,9 +22,10 @@ to install the package from the source archive.
 """
 
 from distutils.core import setup
+
 from setuptools import find_packages
 
-print find_packages(exclude=['test'])
+print(find_packages(exclude=['test']))
 
 setup(name='pvstats',
       version='1.0',
@@ -36,30 +37,30 @@ setup(name='pvstats',
       author='Paul Archer',
       author_email='ptarcher@gmail.com',
       classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'License :: OSI Approved :: Apache 2.0 License',
-        'Programming Language :: Python :: 2.7',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'License :: OSI Approved :: Apache 2.0 License',
+          'Programming Language :: Python :: 2.7',
+          'Operating System :: MacOS :: MacOS X',
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: POSIX',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
       ],
       keywords='photovoltaics,influxdb,pvoutput.org',
       # TODO: I don't really understand packages
       packages=find_packages(exclude=['test']),
       install_requires=[
-        'pymodbus',
-        'influxdb',
-        'paho-mqtt',
-        'pyserial >= 2.6'
+          'pymodbus',
+          'influxdb',
+          'paho-mqtt',
+          'pyserial >= 2.6'
       ],
       data_files=[
-        ('/usr/bin',           ['bin/pvstats']),
-        ('/etc',               ['pvstats.conf']),
-        ('/etc/systemd/system',['pvstats.service']),
+          ('/usr/bin', ['bin/pvstats']),
+          ('/etc', ['pvstats.conf']),
+          ('/etc/systemd/system', ['pvstats.service']),
       ],
 
       platforms=['Linux', 'Mac OS X', 'Win'],
-     )
+      )

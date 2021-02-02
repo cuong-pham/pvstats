@@ -16,23 +16,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymodbus.constants import Defaults
-from pymodbus.client.sync import ModbusTcpClient
-from pymodbus.transaction import ModbusSocketFramer
 
 class BasePVInverter(object):
-  def __init__(self):
-    self.registers = {}
+    def __init__(self):
+        self.registers = {}
 
-  def connect(self): pass
-  def read(self): pass
-  def close(self): pass
+    def connect(self): pass
 
-#-----------------
+    def read(self): pass
+
+    def close(self): pass
+
+
+# -----------------
 # Exported symbols
-#-----------------
+# -----------------
 __all__ = [
-  "BasePVInverter"
+    "BasePVInverter"
 ]
 
 # vim: set expandtab ts=2 sw=2:

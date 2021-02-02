@@ -14,17 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
-import json
-from datetime import datetime
-from sys import stdout
 import argparse
-
+import json
+import logging
+import time
+import traceback
+from datetime import datetime
+import concurrent.futures
 from pvstats.pvinverter.factory import PVInverterFactory
 from pvstats.report import PVReportFactory
-
-import logging
-import traceback
 
 # Setup the logging
 logging.basicConfig()
@@ -33,68 +31,81 @@ _log = logging.getLogger()
 
 # Load the configuration
 def load_config(location):
-  with open(location) as f:
-    cfg = json.load(f)
+    with open(location) as f:
+        cfg = json.load(f)
 
-  try:
-    if cfg['verbose'] > 0:
-      _log.setLevel(logging.DEBUG)
-  except:
+    try:
+        if cfg['verbose'] > 0:
+            _log.setLevel(logging.DEBUG)
+    except:
+        pass
+
+    return cfg
+
+def fetch_inverter_result(inverter):
+    inverter.connect()
+    inverter.read()
+
+    return inverter
+
+def aggregate_inverter_result(inverters):
     pass
 
-  return cfg
-
 def main():
-  # Parse input arguments
-  parser = argparse.ArgumentParser(
-      description="Photovoltaic Inverter Statistics Scanner and Uploader",
-      prog="pvstats",
-      usage="%(prog)s [options]")
-  parser.add_argument("--cfg", help="Configuration File", nargs=1, default="/etc/pvstats.conf")
-  args = parser.parse_args()
+    # Parse input arguments
+    parser = argparse.ArgumentParser(
+        description="Photovoltaic Inverter Statistics Scanner and Uploader",
+        prog="pvstats",
+        usage="%(prog)s [options]")
+    parser.add_argument("--cfg", help="Configuration File", nargs=1, default="/etc/pvstats.conf")
+    args = parser.parse_args()
 
-  # Initialise
-  cfg = load_config(vars(args)['cfg'][0])
+    # Initialise
+    cfg = load_config(vars(args)['cfg'][0])
 
-  # Get an PV inverter client
-  inverter = PVInverterFactory(cfg['inverter']['model'], cfg['inverter'])
+    # Get an PV inverter client
+    inverters = [PVInverterFactory(inverter['model'], inverter) for inverter in cfg['inverters']]
 
-  # Create the report channels
-  reports = []
-  for rpt in cfg['reports']:
-    _log.debug(json.dumps(rpt, sort_keys=True,
-                         indent=4, separators=(',', ': '),default=str))
-    r = PVReportFactory(rpt)
-    if r != None:
-      reports.append(r)
+    # Create the report channels
+    reports = []
+    for rpt in cfg['reports']:
+        _log.debug(json.dumps(rpt, sort_keys=True,
+                              indent=4, separators=(',', ': '), default=str))
+        r = PVReportFactory(rpt)
+        if r is not None:
+            reports.append(r)
 
-  while True:
-    tstart = datetime.now()
-    try:
-      # Grab the data from the inverter
-      inverter.connect()
-      inverter.read()
+    while True:
+        tstart = datetime.now()
+        try:
+            with concurrent.futures.ThreadPoolExecutor(min(4, len(inverters))) as executor:
+                futures = [executor.submit(fetch_inverter_result, inverter) for inverter in inverters]
+                # Log it
+                inverter_results = [inverter_future.result() for inverter_future in concurrent.futures.as_completed(futures)]
+                if len(inverter_results) == 1:
+                    inverter_data = inverter_results[0]
+                else:
+                    raise Exception('Multiple inverters')
+                _log.debug(json.dumps(inverter_data.registers, sort_keys=True,
+                                      indent=4, separators=(',', ': '), default=str))
 
-      # Log it
-      _log.debug(json.dumps(inverter.registers, sort_keys=True,
-                           indent=4, separators=(',', ': '),default=str))
+                # Publish it
 
-      # Publish it
-      for rpt in reports:
-        rpt.publish(inverter.registers)
+                for rpt in reports:
+                    rpt.publish(inverter_data.registers)
 
-    except Exception as err:
-      _log.debug(traceback.format_exc())
-      _log.debug("Ignoring = {}".format(err))
+        except Exception as err:
+            _log.debug(traceback.format_exc())
+            _log.debug("Ignoring = {}".format(err))
 
-    finally:
-      inverter.close()
+        finally:
+            map(lambda inverter: inverter.close(), inverters)
 
-    tend = datetime.now()
-    time.sleep(max((tstart - tend).total_seconds() + cfg['sample_period'],0))
+        tend = datetime.now()
+        time.sleep(max((tstart - tend).total_seconds() + cfg['sample_period'], 0))
 
 
 if __name__ == "__main__":
-  main()
+    main()
 
 # vim: set expandtab ts=2 sw=2:
